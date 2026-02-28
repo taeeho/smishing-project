@@ -44,17 +44,19 @@ export default function HomePage() {
 
     try {
       let response
+      const token = localStorage.getItem('access_token')
+      const authHeader = token ? { Authorization: `Bearer ${token}` } : {}
 
       if (activeTab === 'image' && file) {
         const formData = new FormData()
         formData.append('file', file)
         response = await axios.post('/api/analyze/image', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+          headers: { ...authHeader, 'Content-Type': 'multipart/form-data' },
         })
       } else if (activeTab === 'url' && url.trim()) {
-        response = await axios.post('/api/analyze/url', { url: url.trim() })
+        response = await axios.post('/api/analyze/url', { url: url.trim() }, { headers: authHeader })
       } else if (activeTab === 'text' && text.trim()) {
-        response = await axios.post('/api/analyze/text', { text: text.trim() })
+        response = await axios.post('/api/analyze/text', { text: text.trim() }, { headers: authHeader })
       }
 
       if (response) {

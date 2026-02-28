@@ -85,3 +85,16 @@ class AnalyzeResponse(BaseModel):
     # 메타
     sources: list[SourceItem] = []
     pipeline_steps: list[str] = []
+
+
+class HistoryItem(BaseModel):
+    analysis_id: int
+    title: str = ""
+    status: str = "안전"
+    risk_score: float = 0.0
+    created_at: str = ""
+
+
+class HistoryResponse(BaseModel):
+    total: int = 0
+    results: list[HistoryItem] = []

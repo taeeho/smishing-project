@@ -180,7 +180,10 @@ async def _embed_text(text: str, title: str | None = None, task_type: str | None
         res = await client.post(url, params={"key": settings.gemini_api_key}, json=payload)
 
     if res.status_code != 200:
-        raise HTTPException(status_code=res.status_code, detail="Gemini 임베딩 생성 실패")
+        raise HTTPException(
+            status_code=res.status_code,
+            detail=f"Gemini 임베딩 생성 실패: {res.text}",
+        )
 
     data = res.json()
     embedding = data.get("embedding", {}).get("values")
@@ -206,7 +209,10 @@ async def _generate_with_gemini(prompt: str) -> str:
         res = await client.post(url, params={"key": settings.gemini_api_key}, json=payload)
 
     if res.status_code != 200:
-        raise HTTPException(status_code=res.status_code, detail="Gemini 생성 실패")
+        raise HTTPException(
+            status_code=res.status_code,
+            detail=f"Gemini 생성 실패: {res.text}",
+        )
 
     data = res.json()
     candidates = data.get("candidates") or []
@@ -302,24 +308,24 @@ async def generate_guidance(
         f"키워드: {', '.join(ner_entities or [])}",
     ])
 
-    docs = await _retrieve_docs(db, query=query, top_k=settings.rag_top_k)
-
-    prompt = _build_prompt(
-        smishing_type=smishing_type,
-        url_risk_label=url_risk_label,
-        url_domains=url_domains,
-        ner_entities=ner_entities,
-        group_risk=group_risk,
-        masked_text=masked_text,
-        docs=docs,
-    )
-
-    raw = await _generate_with_gemini(prompt)
-
+    docs: list[RagDocument] = []
+    data: dict[str, Any] = {}
     try:
+        docs = await _retrieve_docs(db, query=query, top_k=settings.rag_top_k)
+        prompt = _build_prompt(
+            smishing_type=smishing_type,
+            url_risk_label=url_risk_label,
+            url_domains=url_domains,
+            ner_entities=ner_entities,
+            group_risk=group_risk,
+            masked_text=masked_text,
+            docs=docs,
+        )
+        raw = await _generate_with_gemini(prompt)
         data = json.loads(raw) if raw.strip().startswith("{") else {"raw": raw}
     except Exception:
-        data = {"raw": raw}
+        # Gemini 또는 임베딩 실패 시에도 기본 가이드로 fallback
+        data = {}
 
     guide = _GUIDE_DB.get(smishing_type, _DEFAULT_GUIDE)
 

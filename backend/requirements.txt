@@ -19,6 +19,7 @@ pgvector>=0.2.4
 
 # Image processing (OCR/QR)
 Pillow>=10.0.0
+pytesseract>=0.3.10
 
 # HTTP client (for external API calls)
 httpx>=0.25.0

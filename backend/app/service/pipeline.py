@@ -10,11 +10,12 @@ from dataclasses import dataclass, field
 
 from app.service.ocr_service import ocr_from_base64, extract_urls_from_text, OCRResult
 from app.service.qr_service import decode_qr_from_base64, QRResult
-from app.service.bert_service import classify_text, BERTResult
+from ai_bert.bert_service import classify_text, BERTResult
 from app.service.safebrowsing_service import check_urls, SafeBrowsingResult
 from app.service.ml_url_service import score_urls, MLUrlResult
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.service.rag_service import generate_guidance, RAGResult
+from ai_rag.rag_service import generate_guidance, RAGResult
+from ai_group_risk.group_risk import check_group_risk
 
 
 @dataclass
@@ -131,7 +132,7 @@ async def run_pipeline(input_data: PipelineInput, db: AsyncSession) -> PipelineR
         result.pipeline_steps.append("URL 없음 – URL 분석 생략")
 
     # ── Step 5: 집단 패턴 분석 (시뮬레이션) ──────────────────
-    result.group_risk = _check_group_risk(
+    result.group_risk = check_group_risk(
         result.bert_result.smishing_type if result.bert_result else None,
         result.extracted_urls,
     )
@@ -172,17 +173,3 @@ async def run_pipeline(input_data: PipelineInput, db: AsyncSession) -> PipelineR
 
     return result
 
-
-def _check_group_risk(smishing_type: str | None, urls: list[str]) -> bool:
-    """
-    집단 패턴 분석 시뮬레이션
-    실제 배포 시 DB에서 유사 신고 빈도를 조회합니다.
-    """
-    # 시뮬레이션: 택배사칭/기관사칭은 현재 빈번하므로 true
-    HIGH_FREQUENCY_TYPES = {"택배사칭", "기관사칭", "금융사기"}
-    if smishing_type in HIGH_FREQUENCY_TYPES:
-        return True
-    # URL이 2개 이상이면 집단 위험으로 간주
-    if len(urls) >= 2:
-        return True
-    return False

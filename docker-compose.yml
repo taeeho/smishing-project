@@ -39,8 +39,13 @@ services:
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-smishing_db}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key}
+      - GOOGLE_SAFE_BROWSING_API_KEY=${GOOGLE_SAFE_BROWSING_API_KEY:-}
     volumes:
       - ./backend:/app  # 핫 리로드용
+      - ./ai_ocr:/app/ai_ocr
+      - ./ai_bert:/app/ai_bert
+      - ./ai_rag:/app/ai_rag
+      - ./ai_group_risk:/app/ai_group_risk
     depends_on:
       db:
         condition: service_healthy

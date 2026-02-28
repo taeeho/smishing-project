@@ -1,10 +1,35 @@
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+
 export default function HistoryPage() {
-  const items = [
-    { id: 1, title: '택배 문자', status: '안전', detail: 'url 안전 12%' },
-    { id: 2, title: '카드사 안내', status: '위험', detail: 'url 위험 86%' },
-    { id: 3, title: '지인 사칭', status: '위험', detail: 'url 위험 74%' },
-    { id: 4, title: '정부기관 안내', status: '안전', detail: 'url 안전 22%' },
-  ]
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [items, setItems] = useState([])
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const token = localStorage.getItem('access_token')
+        if (!token) {
+          setError('로그인이 필요합니다.')
+          setLoading(false)
+          return
+        }
+        const res = await axios.get('/api/analyze/history', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        setItems(res.data.results || [])
+      } catch (err) {
+        setError('기록을 불러오지 못했습니다.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
+  }, [])
 
   const badgeClass = (status) =>
     status === '위험'
@@ -18,24 +43,43 @@ export default function HistoryPage() {
         <p className="mt-1 text-sm text-slate-500">내가 올렸던 분석 기록을 모아봅니다.</p>
       </header>
 
-      <section className="space-y-3">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-2xl border border-violet-100 bg-white px-4 py-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-700">{item.title}</p>
-                <p className="text-xs text-slate-400">{item.detail}</p>
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
+        </div>
+      )}
+      {error && !loading && (
+        <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && items.length === 0 && (
+        <div className="rounded-2xl border border-violet-100 bg-white px-4 py-10 text-center text-sm text-slate-400">
+          아직 기록이 없어요.
+        </div>
+      )}
+
+      {!loading && !error && items.length > 0 && (
+        <section className="space-y-3">
+          {items.map((item) => (
+            <div
+              key={item.analysis_id}
+              className="rounded-2xl border border-violet-100 bg-white px-4 py-4 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">{item.title}</p>
+                  <p className="text-xs text-slate-400">위험도 {Math.round(item.risk_score)}%</p>
+                </div>
+                <span className={`rounded-full border px-3 py-1 text-xs font-bold ${badgeClass(item.status)}`}>
+                  {item.status}
+                </span>
               </div>
-              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${badgeClass(item.status)}`}>
-                {item.status}
-              </span>
             </div>
-          </div>
-        ))}
-      </section>
+          ))}
+        </section>
+      )}
     </div>
   )
 }

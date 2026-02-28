@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     gemini_model: str = Field("gemini-1.5-flash", alias="GEMINI_MODEL")
     gemini_embed_model: str = Field("gemini-embedding-001", alias="GEMINI_EMBED_MODEL")
     rag_top_k: int = Field(4, alias="RAG_TOP_K")
+    google_safe_browsing_api_key: str | None = Field(None, alias="GOOGLE_SAFE_BROWSING_API_KEY")
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
