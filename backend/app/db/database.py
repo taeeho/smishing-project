@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from app.core.settings import settings
@@ -21,6 +22,7 @@ async def init_db():
     from app.db import models
 
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
     return engine
 

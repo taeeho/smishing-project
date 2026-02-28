@@ -1,0 +1,33 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap");
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family:
+      "Noto Sans KR",
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      sans-serif;
+    line-height: 1.55;
+    color: #1f2937;
+    background: #f5f3ff;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 스크롤바 숨기기 (모바일 느낌) */
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
