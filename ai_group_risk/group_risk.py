@@ -1,7 +1,3 @@
-"""집단 위험 분석 (시뮬레이션)"""
-from __future__ import annotations
-
-
 def check_group_risk(smishing_type: str | None, urls: list[str]) -> bool:
     """
     집단 패턴 분석 시뮬레이션

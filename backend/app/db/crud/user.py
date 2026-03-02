@@ -1,8 +1,5 @@
-from __future__ import annotations
-
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.db.models.user import User
 
 

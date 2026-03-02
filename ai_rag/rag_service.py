@@ -1,25 +1,14 @@
-"""
-RAG 서비스 – 문서(대응 가이드/신고 절차/FAQ) 기반 결론 + 조치 안내 생성
-Gemini 임베딩 + pgvector 검색 + Gemini 생성 모델로 교체합니다.
-"""
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 import json
 from typing import Any
-
 import httpx
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.settings import settings
 from app.db.models.rag_document import RagDocument
 
 
-# ─────────────────────────────────────────────────────────────
-# 기본 가이드 데이터 (시드용)
-# ─────────────────────────────────────────────────────────────
 
 _GUIDE_DB: dict[str, dict] = {
     "택배사칭": {
@@ -173,7 +162,7 @@ async def _embed_text(text: str, title: str | None = None, task_type: str | None
     }
     if task_type:
         payload["taskType"] = task_type
-    if title:
+    if title and task_type == "RETRIEVAL_DOCUMENT":
         payload["title"] = title
 
     async with httpx.AsyncClient(timeout=20) as client:
@@ -233,7 +222,7 @@ async def _ensure_seeded(db: AsyncSession) -> None:
 
     docs = _build_seed_docs()
     for doc in docs:
-        embedding = await _embed_text(doc["content"], title=doc["title"], task_type="SEMANTIC_SIMILARITY")
+        embedding = await _embed_text(doc["content"], title=doc["title"], task_type="RETRIEVAL_DOCUMENT")
         db.add(RagDocument(
             title=doc["title"],
             content=doc["content"],
@@ -245,7 +234,7 @@ async def _ensure_seeded(db: AsyncSession) -> None:
 
 async def _retrieve_docs(db: AsyncSession, query: str, top_k: int) -> list[RagDocument]:
     await _ensure_seeded(db)
-    query_embedding = await _embed_text(query, task_type="SEMANTIC_SIMILARITY")
+    query_embedding = await _embed_text(query, task_type="RETRIEVAL_QUERY")
 
     stmt = (
         select(RagDocument)
@@ -300,7 +289,7 @@ async def generate_guidance(
     ner_entities: list[str] | None = None,
     group_risk: bool = False,
     masked_text: str | None = None,
-) -> RAGResult:
+) -> tuple[RAGResult, str, str | None]:
     query = "\n".join([
         f"유형: {smishing_type}",
         f"위험도: {url_risk_label}",
@@ -309,6 +298,8 @@ async def generate_guidance(
     ])
 
     docs: list[RagDocument] = []
+    rag_engine = "fallback"
+    rag_error: str | None = None
     data: dict[str, Any] = {}
     try:
         docs = await _retrieve_docs(db, query=query, top_k=settings.rag_top_k)
@@ -323,15 +314,27 @@ async def generate_guidance(
         )
         raw = await _generate_with_gemini(prompt)
         data = json.loads(raw) if raw.strip().startswith("{") else {"raw": raw}
-    except Exception:
-        # Gemini 또는 임베딩 실패 시에도 기본 가이드로 fallback
+        rag_engine = "gemini"
+    except Exception as exc:
         data = {}
+        rag_error = str(exc)
 
     guide = _GUIDE_DB.get(smishing_type, _DEFAULT_GUIDE)
 
-    risk_summary = data.get("risk_summary") or f"{guide['summary']} 현재 위험도는 {url_risk_label} 수준입니다."
-    evidence = data.get("evidence") or [f"분류 유형: {smishing_type}"]
-    recommended_actions = data.get("recommended_actions") or guide["actions"]
+    if url_risk_label == "안전":
+        risk_summary = "안전한 것으로 확인되었습니다. 현재 위험도는 안전 수준입니다."
+        evidence = [
+            "화이트리스트 도메인 확인",
+            "Safe Browsing 위험 신호 없음",
+        ]
+        recommended_actions = [
+            "그래도 주소 철자를 한 번 더 확인하세요.",
+            "공식 앱/즐겨찾기를 이용하면 더 안전합니다.",
+        ]
+    else:
+        risk_summary = data.get("risk_summary") or f"{guide['summary']} 현재 위험도는 {url_risk_label} 수준입니다."
+        evidence = data.get("evidence") or [f"분류 유형: {smishing_type}"]
+        recommended_actions = data.get("recommended_actions") or guide["actions"]
     report_template = data.get("report_template") or (
         f"의심 문자 신고\n"
         f"유형: {smishing_type or '미분류'}\n"
@@ -342,10 +345,13 @@ async def generate_guidance(
         f"요청 사항: 분석 및 차단 요청"
     )
     report_procedure = data.get("report_procedure") or guide.get("report_procedure", "112 또는 118에 신고하세요.")
-    guardian_summary = data.get("guardian_summary") or (
-        f"⚠️ 스미싱 의심 ({smishing_type or '미분류'}) | 위험도: {url_risk_label}. "
-        f"링크 클릭·송금 중단 필요. 공식 채널로 확인 요망."
-    )
+    if url_risk_label == "안전":
+        guardian_summary = "✅ 현재는 안전한 링크로 확인됩니다. 그래도 공식 채널 확인을 권장합니다."
+    else:
+        guardian_summary = data.get("guardian_summary") or (
+            f"⚠️ 스미싱 의심 ({smishing_type or '미분류'}) | 위험도: {url_risk_label}. "
+            f"링크 클릭·송금 중단 필요. 공식 채널로 확인 요망."
+        )
     coaching_steps = data.get("coaching_steps") or [
         "1단계: 추가 피해 여부를 확인하세요 (계좌이체, 앱 설치 등).",
         "2단계: 금융 앱과 계좌를 점검하세요 (비정상 거래 확인).",
@@ -372,4 +378,4 @@ async def generate_guidance(
         faq=faq,
         similar_cases=similar_cases,
         sources=sources,
-    )
+    ), rag_engine, rag_error

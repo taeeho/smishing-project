@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-
 from app.db.schemas.coach import CoachInput, CoachOutput
 from app.service.coach import build_coach_output
 

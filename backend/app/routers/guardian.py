@@ -1,25 +1,9 @@
-"""
-보호자 모드 API 라우터
-케이스 목록, 메모, 상태 업데이트, 하루 요약
-"""
-from __future__ import annotations
-
 from datetime import datetime
 from fastapi import APIRouter
-
-from app.db.schemas.guardian import (
-    GuardianAlert,
-    GuardianCase,
-    GuardianCaseList,
-    GuardianDailySummary,
-    GuardianMemoRequest,
-    GuardianStatusUpdate,
-)
+from app.db.schemas.guardian import GuardianAlert, GuardianCase, GuardianCaseList, GuardianDailySummary, GuardianMemoRequest, GuardianStatusUpdate
 
 router = APIRouter(prefix="/api/guardian", tags=["guardian"])
 
-# ── 인메모리 저장소 (시뮬레이션) ─────────────────────────────
-# 실제 배포 시 DB 연동으로 교체합니다.
 _cases: dict[int, dict] = {
     1: {
         "case_id": 1,

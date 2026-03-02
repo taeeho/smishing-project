@@ -5,6 +5,7 @@ function RiskBadge({ label }) {
     '높음': 'bg-rose-100 text-rose-700 border-rose-200',
     '중간': 'bg-amber-100 text-amber-700 border-amber-200',
     '낮음': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    '안전': 'bg-emerald-100 text-emerald-700 border-emerald-200',
     '정보 부족': 'bg-slate-100 text-slate-500 border-slate-200',
   }
   return (
@@ -34,6 +35,7 @@ export default function ResultPage() {
     '높음': 'from-rose-500 to-red-600',
     '중간': 'from-amber-400 to-orange-500',
     '낮음': 'from-emerald-400 to-teal-500',
+    '안전': 'from-emerald-400 to-teal-500',
   }[r.url_risk_label] || 'from-violet-400 to-purple-600'
 
   return (
@@ -84,20 +86,22 @@ export default function ResultPage() {
         )}
       </section>
 
-      {/* 지금 할 행동 */}
-      <section className="rounded-2xl border border-violet-100 bg-white px-4 py-5 shadow-sm">
-        <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
-          <span className="text-lg">🚀</span> 지금 할 행동
-        </h2>
-        <ul className="space-y-2">
-          {r.recommended_actions?.map((action, i) => (
-            <li key={i} className="flex items-start gap-3 rounded-xl bg-violet-50/70 px-3 py-2">
-              <span className="mt-0.5 text-base">{i === 0 ? '❌' : i === 3 ? '📞' : '✅'}</span>
-              <span className="text-sm font-medium text-slate-700">{action}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/* 지금 할 행동 (안전이면 숨김) */}
+      {r.url_risk_label !== '안전' && (
+        <section className="rounded-2xl border border-violet-100 bg-white px-4 py-5 shadow-sm">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-800">
+            <span className="text-lg">🚀</span> 지금 할 행동
+          </h2>
+          <ul className="space-y-2">
+            {r.recommended_actions?.map((action, i) => (
+              <li key={i} className="flex items-start gap-3 rounded-xl bg-violet-50/70 px-3 py-2">
+                <span className="mt-0.5 text-base">{i === 0 ? '❌' : i === 3 ? '📞' : '✅'}</span>
+                <span className="text-sm font-medium text-slate-700">{action}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* URL 분석 상세 */}
       {r.url_analyses?.length > 0 && (

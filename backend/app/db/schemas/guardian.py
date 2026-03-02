@@ -1,6 +1,3 @@
-"""보호자 모드 관련 Pydantic 스키마"""
-from __future__ import annotations
-
 from datetime import datetime
 from pydantic import BaseModel, Field
 

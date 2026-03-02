@@ -12,7 +12,6 @@ app = FastAPI(
     version="0.2.0",
 )
 
-# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -25,7 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 라우터 등록
 app.include_router(coach_router)
 app.include_router(analyze_router)
 app.include_router(guardian_router)

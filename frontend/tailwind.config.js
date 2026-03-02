@@ -4,7 +4,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 연한 보라색 계열 (브랜드 톤)
         primary: {
           50: "#f5f3ff",
           100: "#ede9fe",

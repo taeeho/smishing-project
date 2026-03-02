@@ -1,12 +1,8 @@
-from __future__ import annotations
-
 from typing import Any
-
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.core.settings import settings
 from app.db.crud.user import create_user, get_user_by_email, update_refresh_token
@@ -145,7 +141,6 @@ async def refresh_token(
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="토큰 정보가 올바르지 않습니다.")
 
-    # SQLAlchemy AsyncSession.get needs model class
     from app.db.models.user import User
 
     user = await db.get(User, int(user_id))

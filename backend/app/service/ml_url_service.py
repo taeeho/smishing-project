@@ -1,14 +1,20 @@
-"""
-ML URL 위험도 스코어링 서비스 (2차 판별)
-LogisticRegression / RandomForest 시뮬레이션
-실제 배포 시 학습된 sklearn 모델(joblib)로 교체합니다.
-"""
-from __future__ import annotations
-
 import re
 import math
 from dataclasses import dataclass
 from urllib.parse import urlparse
+import os
+from app.core.settings import settings
+
+_model = None
+
+_SAFE_DOMAINS = {
+    "naver.com",
+    "www.naver.com",
+    "google.com",
+    "www.google.com",
+    "jobkorea.com",
+    "www.jobkorea.com",
+}
 
 
 @dataclass
@@ -20,7 +26,21 @@ class MLUrlResult:
     features: dict[str, float] # 추출된 특성값
 
 
-def score_url(url: str) -> MLUrlResult:
+def _load_model():
+    global _model
+    if _model is not None:
+        return _model
+    if not settings.url_model_path or not os.path.exists(settings.url_model_path):
+        return None
+    try:
+        import joblib
+        _model = joblib.load(settings.url_model_path)
+        return _model
+    except Exception:
+        return None
+
+
+def score_url(url: str, use_trained: bool = False) -> MLUrlResult:
     """
     URL에서 특성을 추출하고 위험도(%)를 산출합니다.
 
@@ -31,6 +51,34 @@ def score_url(url: str) -> MLUrlResult:
         score = model.predict_proba([features])[0][1] * 100
     """
     features = _extract_features(url)
+    try:
+        parsed = urlparse(url if "://" in url else f"https://{url}")
+        domain = parsed.netloc.lower()
+    except Exception:
+        domain = ""
+
+    if domain in _SAFE_DOMAINS:
+        return MLUrlResult(
+            url=url,
+            risk_score=0.0,
+            risk_label="안전",
+            features={**features, "whitelisted": 1.0},
+        )
+
+    if use_trained:
+        model = _load_model()
+        if model is not None:
+            try:
+                feature_vec = [features[k] for k in sorted(features.keys())]
+                score = float(model.predict_proba([feature_vec])[0][1] * 100)
+                return MLUrlResult(
+                    url=url,
+                    risk_score=round(score, 1),
+                    risk_label=_score_to_label(score),
+                    features=features,
+                )
+            except Exception:
+                pass
     risk_score = _simulate_score(features)
     risk_label = _score_to_label(risk_score)
 
@@ -42,14 +90,11 @@ def score_url(url: str) -> MLUrlResult:
     )
 
 
-def score_urls(urls: list[str]) -> list[MLUrlResult]:
+def score_urls(urls: list[str], use_trained: bool = False) -> list[MLUrlResult]:
     """여러 URL의 위험도를 산출합니다."""
-    return [score_url(u) for u in urls]
+    return [score_url(u, use_trained=use_trained) for u in urls]
 
 
-# ─────────────────────────────────────────────────────────────
-# Feature Extraction
-# ─────────────────────────────────────────────────────────────
 
 def _extract_features(url: str) -> dict[str, float]:
     """URL에서 ML 특성을 추출합니다."""
@@ -84,9 +129,6 @@ def _digit_ratio(s: str) -> float:
     return sum(c.isdigit() for c in s) / len(s)
 
 
-# ─────────────────────────────────────────────────────────────
-# Scoring (시뮬레이션)
-# ─────────────────────────────────────────────────────────────
 
 def _simulate_score(features: dict[str, float]) -> float:
     """
@@ -107,7 +149,6 @@ def _simulate_score(features: dict[str, float]) -> float:
 
     raw = sum(features.get(k, 0) * w for k, w in weights.items())
 
-    # sigmoid로 0~100 범위로 변환
     score = 100 / (1 + math.exp(-0.05 * (raw - 20)))
     return max(0.0, min(100.0, score))
 

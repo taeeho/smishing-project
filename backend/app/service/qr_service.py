@@ -1,9 +1,3 @@
-"""
-QR 디코더 서비스 – QR 코드 이미지에서 URL을 추출합니다.
-실제 배포 시 pyzbar 라이브러리로 교체 가능합니다.
-"""
-from __future__ import annotations
-
 import base64
 import io
 from dataclasses import dataclass, field
@@ -30,17 +24,7 @@ def decode_qr_from_base64(image_b64: str) -> QRResult:
 def decode_qr_from_bytes(image_bytes: bytes) -> QRResult:
     """바이트 QR 이미지를 디코딩합니다."""
 
-    # ── 실제 QR 디코딩 (pyzbar + PIL 설치 필요) ─────────────
-    # from PIL import Image
-    # from pyzbar.pyzbar import decode
-    # img = Image.open(io.BytesIO(image_bytes))
-    # results = decode(img)
-    # raw_data = [r.data.decode("utf-8") for r in results]
-    # urls = [d for d in raw_data if d.startswith("http")]
-    # return QRResult(decoded_urls=urls, raw_data=raw_data, success=bool(results))
-    # ──────────────────────────────────────────────────────────
 
-    # ── 시뮬레이션 모드 ──────────────────────────────────────
     return _simulate_qr(image_bytes)
 
 

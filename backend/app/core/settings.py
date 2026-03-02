@@ -1,9 +1,7 @@
-from __future__ import annotations
 from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# 설정 파일 경로
 BASE_DIR = Path(__file__).resolve().parents[2]
 ENV_FILE = BASE_DIR / ".env"
 
@@ -24,6 +22,9 @@ class Settings(BaseSettings):
     gemini_embed_model: str = Field("gemini-embedding-001", alias="GEMINI_EMBED_MODEL")
     rag_top_k: int = Field(4, alias="RAG_TOP_K")
     google_safe_browsing_api_key: str | None = Field(None, alias="GOOGLE_SAFE_BROWSING_API_KEY")
+    ml_switch_threshold: int = Field(1000, alias="ML_SWITCH_THRESHOLD")
+    url_model_path: str | None = Field(None, alias="URL_MODEL_PATH")
+    bert_model_path: str | None = Field(None, alias="BERT_MODEL_PATH")
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,

@@ -4,5 +4,7 @@ from app.db.models.notification import Notification
 from app.db.models.url import Url
 from app.db.models.user import User
 from app.db.models.rag_document import RagDocument
+from app.db.models.url_training import UrlTrainingData
+from app.db.models.text_training import TextTrainingData
 
-__all__ = ["AnalysisResult", "Message", "Notification", "Url", "User", "RagDocument"]
+__all__ = ["AnalysisResult", "Message", "Notification", "Url", "User", "RagDocument", "UrlTrainingData", "TextTrainingData"]

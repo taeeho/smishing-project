@@ -1,39 +1,90 @@
-"""
-BERT 스미싱 유형 분류 서비스
-실제 배포 시 학습된 BERT 모델(transformers)로 교체 가능합니다.
-현재는 키워드 기반 규칙 시뮬레이션으로 동작합니다.
-"""
-from __future__ import annotations
-
 from dataclasses import dataclass
+import json
+import httpx
+from app.core.settings import settings
 
-# ── 스미싱 유형 정의 ─────────────────────────────────────────
-SMISHING_TYPES = {
-    "택배사칭": ["택배", "배송", "운송장", "물류", "반품", "수령", "배달"],
-    "기관사칭": ["국민건강보험", "국세청", "검찰", "경찰", "법원", "정부", "공공기관", "질병관리청", "금감원"],
-    "금융사기": ["계좌", "출금", "이체", "대출", "카드", "결제", "은행", "금융", "투자", "수익"],
-    "지인사칭": ["엄마", "아빠", "아들", "딸", "선생님", "친구", "급해", "부탁", "돈 좀"],
-    "피싱링크": ["확인하세요", "클릭", "로그인", "인증", "본인확인", "비밀번호"],
-}
+_pipeline = None
+
+
+def _load_transformer_pipeline():
+    global _pipeline
+    if _pipeline is not None:
+        return _pipeline
+    if not settings.bert_model_path:
+        return None
+    try:
+        from transformers import pipeline
+        _pipeline = pipeline("text-classification", model=settings.bert_model_path)
+        return _pipeline
+    except Exception:
+        return None
+
+
+LABELS = [
+    "택배사칭",
+    "기관사칭",
+    "금융사기",
+    "지인사칭",
+    "피싱링크",
+    "기타",
+    "판별불가",
+]
 
 
 @dataclass
 class BERTResult:
-    """BERT 분류 결과"""
+    """분류 결과"""
     smishing_type: str
     confidence: float
     all_scores: dict[str, float]
 
 
-def classify_text(text: str) -> BERTResult:
-    """
-    텍스트를 스미싱 유형으로 분류합니다.
+def _assert_gemini_ready() -> None:
+    if not settings.gemini_api_key:
+        raise RuntimeError("GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.")
 
-    실제 BERT 모델 교체 시:
-        from transformers import pipeline
-        classifier = pipeline("text-classification", model="path/to/bert-smishing")
-        result = classifier(text)
-    """
+
+def _build_prompt(text: str) -> str:
+    return (
+        "너는 스미싱 유형 분류기다. 아래 텍스트를 가장 적절한 한 가지 유형으로 분류해라.\n"
+        "가능한 유형: 택배사칭, 기관사칭, 금융사기, 지인사칭, 피싱링크, 기타, 판별불가\n"
+        "반드시 JSON으로만 답하라.\n"
+        "{\n"
+        '  "label": string,\n'
+        '  "confidence": number\n'
+        "}\n\n"
+        f"텍스트: {text}"
+    )
+
+
+def _call_gemini(prompt: str) -> str:
+    _assert_gemini_ready()
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.gemini_model}:generateContent"
+    payload = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": prompt}],
+            }
+        ]
+    }
+    with httpx.Client(timeout=20) as client:
+        res = client.post(url, params={"key": settings.gemini_api_key}, json=payload)
+    if res.status_code != 200:
+        raise RuntimeError(f"Gemini 분류 실패: {res.text}")
+    data = res.json()
+    candidates = data.get("candidates") or []
+    if not candidates:
+        raise RuntimeError("Gemini 분류 응답이 비었습니다.")
+    parts = candidates[0].get("content", {}).get("parts", [])
+    text = "".join([p.get("text", "") for p in parts]).strip()
+    if not text:
+        raise RuntimeError("Gemini 분류 응답 텍스트가 비었습니다.")
+    return text
+
+
+def classify_text(text: str, use_trained: bool = False) -> BERTResult:
+    """LLM으로 스미싱 유형을 분류합니다. 학습 모델이 있으면 우선 사용합니다."""
     if not text or not text.strip():
         return BERTResult(
             smishing_type="판별불가",
@@ -41,30 +92,39 @@ def classify_text(text: str) -> BERTResult:
             all_scores={"판별불가": 1.0},
         )
 
-    text_lower = text.lower()
-    scores: dict[str, float] = {}
+    if use_trained:
+        clf = _load_transformer_pipeline()
+        if clf:
+            try:
+                out = clf(text)[0]
+                label = out.get("label", "기타")
+                score = float(out.get("score", 0.5))
+                if label not in LABELS:
+                    label = "기타"
+                return BERTResult(
+                    smishing_type=label,
+                    confidence=round(max(min(score, 1.0), 0.0), 3),
+                    all_scores={label: round(max(min(score, 1.0), 0.0), 3)},
+                )
+            except Exception:
+                pass
 
-    for stype, keywords in SMISHING_TYPES.items():
-        matched = sum(1 for kw in keywords if kw in text_lower)
-        # 매칭 키워드 수를 전체 키워드 수로 나누어 점수 계산
-        scores[stype] = min(matched / max(len(keywords) * 0.3, 1), 1.0)
-
-    # 점수가 모두 0이면 판별불가
-    if max(scores.values()) == 0:
+    try:
+        prompt = _build_prompt(text)
+        raw = _call_gemini(prompt)
+        data = json.loads(raw) if raw.strip().startswith("{") else {}
+        label = data.get("label")
+        confidence = float(data.get("confidence", 0.5))
+        if label not in LABELS:
+            label = "기타"
         return BERTResult(
-            smishing_type="기타",
-            confidence=0.3,
-            all_scores={**scores, "기타": 0.3},
+            smishing_type=label,
+            confidence=round(max(min(confidence, 1.0), 0.0), 3),
+            all_scores={label: round(max(min(confidence, 1.0), 0.0), 3)},
         )
-
-    best_type = max(scores, key=scores.get)  # type: ignore
-    best_score = scores[best_type]
-
-    # confidence 보정 (시뮬레이션이므로 0.6~0.95 범위)
-    confidence = min(0.6 + best_score * 0.35, 0.95)
-
-    return BERTResult(
-        smishing_type=best_type,
-        confidence=round(confidence, 3),
-        all_scores={k: round(v, 3) for k, v in scores.items()},
-    )
+    except Exception:
+        return BERTResult(
+            smishing_type="판별불가",
+            confidence=0.0,
+            all_scores={"판별불가": 1.0},
+        )

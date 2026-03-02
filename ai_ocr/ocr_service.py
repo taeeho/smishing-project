@@ -1,18 +1,10 @@
-"""
-OCR 서비스 – 이미지에서 텍스트와 URL을 추출합니다.
-Tesseract(pytesseract) 기반 실OCR을 사용합니다.
-"""
-from __future__ import annotations
-
 import base64
 import io
 import re
 from dataclasses import dataclass, field
-
 from PIL import Image
 import pytesseract
 
-# URL 정규식 – http(s)://... 또는 www.으로 시작하는 도메인
 _URL_RE = re.compile(
     r"https?://[^\s<>\"']+|www\.[^\s<>\"']+"
 )

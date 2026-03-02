@@ -1,9 +1,3 @@
-"""
-분석 API 라우터
-통합 분석, 이미지 분석, URL 분석, 텍스트 분석, 이력 조회
-"""
-from __future__ import annotations
-
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, status, Query
 import base64
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,18 +5,7 @@ from sqlalchemy import select
 from sqlalchemy import func
 from datetime import datetime, timedelta, timezone
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
-from app.db.schemas.analyze import (
-    AnalyzeRequest,
-    AnalyzeResponse,
-    AnalyzeTextRequest,
-    AnalyzeUrlRequest,
-    FAQItem,
-    SourceItem,
-    UrlAnalysisDetail,
-    HistoryResponse,
-    HistoryItem,
-)
+from app.db.schemas.analyze import AnalyzeRequest, AnalyzeResponse, AnalyzeTextRequest, AnalyzeUrlRequest, FAQItem, SourceItem, UrlAnalysisDetail, HistoryResponse, HistoryItem
 from app.db.schemas.trend import TrendResponse, TrendItem
 from app.db.database import get_db
 from app.service.pipeline import PipelineInput, run_pipeline
@@ -31,6 +14,10 @@ from app.db.models.message import Message
 from app.db.models.url import Url
 from app.db.models.analysis_result import AnalysisResult
 from app.db.models.user import User
+from app.db.models.url_training import UrlTrainingData
+from app.db.models.text_training import TextTrainingData
+import json
+from ai_rag.rag_service import generate_guidance
 
 router = APIRouter(prefix="/api/analyze", tags=["analyze"])
 security = HTTPBearer()
@@ -68,7 +55,6 @@ async def _pipeline_to_response(input_type: str, pipeline_result, db: AsyncSessi
     pr = pipeline_result
     rag = pr.rag_result
 
-    # URL 분석 상세
     url_analyses = []
     for sb in pr.safebrowsing_results:
         ml = next((m for m in pr.ml_url_results if m.url == sb.url), None)
@@ -79,7 +65,6 @@ async def _pipeline_to_response(input_type: str, pipeline_result, db: AsyncSessi
             risk_score=ml.risk_score if ml else (90.0 if not sb.is_safe else 0.0),
             risk_label=ml.risk_label if ml else ("높음" if not sb.is_safe else "낮음"),
         ))
-    # ML만 있는 URL 추가
     sb_urls = {sb.url for sb in pr.safebrowsing_results}
     for ml in pr.ml_url_results:
         if ml.url not in sb_urls:
@@ -89,6 +74,7 @@ async def _pipeline_to_response(input_type: str, pipeline_result, db: AsyncSessi
             ))
 
     max_risk = max((u.risk_score for u in url_analyses), default=0.0)
+    all_safe = len(url_analyses) > 0 and all(u.risk_label == "안전" for u in url_analyses)
 
     response = AnalyzeResponse(
         input_type=input_type,
@@ -99,6 +85,7 @@ async def _pipeline_to_response(input_type: str, pipeline_result, db: AsyncSessi
         url_analyses=url_analyses,
         max_url_risk_score=max_risk,
         url_risk_label=(
+            "안전" if all_safe else
             "높음" if max_risk >= 70 else
             "중간" if max_risk >= 40 else
             "낮음" if url_analyses else "정보 부족"
@@ -115,6 +102,8 @@ async def _pipeline_to_response(input_type: str, pipeline_result, db: AsyncSessi
         similar_cases=rag.similar_cases if rag else "",
         sources=[SourceItem(title=s.title, source=s.source, snippet=s.snippet) for s in rag.sources] if rag else [],
         pipeline_steps=pr.pipeline_steps,
+        rag_engine=pr.rag_engine,
+        rag_error=pr.rag_error,
     )
     if user_id is not None:
         msg = Message(
@@ -146,6 +135,23 @@ async def _pipeline_to_response(input_type: str, pipeline_result, db: AsyncSessi
             keywords=",".join(response.evidence[:2]) if response.evidence else None,
         )
         db.add(analysis)
+
+        if pr.extracted_text and pr.bert_result:
+            db.add(TextTrainingData(
+                text=pr.extracted_text[:1000],
+                label=pr.bert_result.smishing_type,
+                confidence=float(pr.bert_result.confidence),
+            ))
+
+        if pr.ml_url_results:
+            for ml in pr.ml_url_results:
+                db.add(UrlTrainingData(
+                    url=ml.url,
+                    features_json=json.dumps(ml.features, ensure_ascii=False),
+                    risk_label=ml.risk_label,
+                    risk_score=float(ml.risk_score),
+                ))
+
         await db.commit()
     return response
 
@@ -237,6 +243,101 @@ async def analyze_history(
     return HistoryResponse(total=len(items), results=items)
 
 
+@router.get("/history/{analysis_id}", response_model=AnalyzeResponse)
+async def analyze_history_detail(
+    analysis_id: int,
+    db: AsyncSession = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> AnalyzeResponse:
+    """분석 이력 상세 조회"""
+    user_id = await _get_current_user_id(credentials, db)
+    result = await db.execute(
+        select(AnalysisResult, Message, Url)
+        .join(Message, AnalysisResult.msg_id == Message.msg_id)
+        .outerjoin(Url, AnalysisResult.urls_id == Url.urls_id)
+        .where(AnalysisResult.analysis_id == analysis_id)
+        .where(Message.user_id == user_id)
+    )
+    row = result.first()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="기록을 찾을 수 없습니다.")
+    ar, msg, url = row
+
+    risk_score = ar.risk_score or 0.0
+    url_risk_label = (
+        "높음" if risk_score >= 70 else
+        "중간" if risk_score >= 40 else
+        "낮음"
+    )
+    url_analyses = []
+    if url:
+        url_analyses.append(UrlAnalysisDetail(
+            url=url.url_domain,
+            is_safe=(url.safe_browsing_result != "위험"),
+            risk_score=risk_score,
+            risk_label=url_risk_label,
+        ))
+
+    ner_entities = ar.keywords.split(",") if ar.keywords else None
+    rag_result, rag_engine, rag_error = await generate_guidance(
+        db=db,
+        smishing_type=ar.smishing_type or "기타",
+        url_risk_label=url_risk_label,
+        url_domains=[url.url_domain] if url else [],
+        ner_entities=ner_entities,
+        group_risk=False,
+        masked_text=msg.masked_text,
+    )
+
+    return AnalyzeResponse(
+        input_type=msg.input_type,
+        extracted_text=msg.masked_text or "",
+        extracted_urls=[url.url_domain] if url else [],
+        smishing_type=ar.smishing_type or "판별불가",
+        smishing_confidence=0.0,
+        url_analyses=url_analyses,
+        max_url_risk_score=risk_score,
+        url_risk_label=url_risk_label,
+        group_risk=False,
+        risk_summary=rag_result.risk_summary,
+        evidence=rag_result.evidence,
+        recommended_actions=rag_result.recommended_actions,
+        report_template=rag_result.report_template,
+        report_procedure=rag_result.report_procedure,
+        guardian_summary=rag_result.guardian_summary,
+        coaching_steps=rag_result.coaching_steps,
+        faq=[FAQItem(**f) for f in rag_result.faq],
+        similar_cases=rag_result.similar_cases,
+        sources=[SourceItem(title=s.title, source=s.source, snippet=s.snippet) for s in rag_result.sources],
+        pipeline_steps=[],
+        rag_engine=rag_engine,
+        rag_error=rag_error,
+    )
+
+
+@router.delete("/history/{analysis_id}")
+async def delete_history(
+    analysis_id: int,
+    db: AsyncSession = Depends(get_db),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> dict[str, str]:
+    """분석 이력 삭제"""
+    user_id = await _get_current_user_id(credentials, db)
+    result = await db.execute(
+        select(AnalysisResult, Message)
+        .join(Message, AnalysisResult.msg_id == Message.msg_id)
+        .where(AnalysisResult.analysis_id == analysis_id)
+        .where(Message.user_id == user_id)
+    )
+    row = result.first()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="기록을 찾을 수 없습니다.")
+    ar, msg = row
+    await db.delete(msg)
+    await db.commit()
+    return {"message": "삭제되었습니다."}
+
+
 @router.get("/trends", response_model=TrendResponse)
 async def analyze_trends(
     age_group: str = Query("미공개", description="10대 | 20대 | 30대 | 40대 | 미공개"),
@@ -256,7 +357,6 @@ async def analyze_trends(
     )
 
     if age_group != "미공개":
-        # 나이대 필터링
         if age_group == "10대":
             stmt = stmt.where(User.age.between(10, 19))
         elif age_group == "20대":

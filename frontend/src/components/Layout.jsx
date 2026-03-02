@@ -36,7 +36,6 @@ export default function Layout() {
         )
       }
     } catch {
-      // ignore logout errors and clear local state
     } finally {
       localStorage.removeItem('auth_user')
       localStorage.removeItem('access_token')

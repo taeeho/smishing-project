@@ -37,38 +37,6 @@ podman compose up --build
 
 ---
 
-## 환경 변수
-
-`backend/.env`에 아래 항목을 설정합니다.
-
-```
-# Database
-DB_HOST=db
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_PORT=5432
-DB_NAME=smishing_db
-
-# Application
-SECRET_KEY=your-secret-key
-
-# Kakao OAuth
-KAKAO_CLIENT_ID=your-kakao-rest-api-key
-KAKAO_CLIENT_SECRET=your-kakao-client-secret
-KAKAO_REDIRECT_URI=http://localhost:5173/auth/kakao/callback
-
-# Gemini (RAG)
-GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-1.5-flash
-GEMINI_EMBED_MODEL=gemini-embedding-001
-RAG_TOP_K=4
-
-# Google Safe Browsing
-GOOGLE_SAFE_BROWSING_API_KEY=your-google-safe-browsing-api-key
-```
-
----
-
 ## 주요 흐름
 
 1. 로그인(카카오)

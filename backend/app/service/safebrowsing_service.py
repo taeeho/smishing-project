@@ -1,17 +1,9 @@
-"""
-Google Safe Browsing API 서비스 (v4)
-API 키를 사용해 실제 위협 매칭을 수행합니다.
-"""
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
 import httpx
-
 from app.core.settings import settings
 
-# ── 의심 도메인 패턴 ─────────────────────────────────────────
 _SUSPICIOUS_TLDS = {".xyz", ".tk", ".ml", ".ga", ".cf", ".gq", ".top", ".buzz", ".click"}
 _SUSPICIOUS_KEYWORDS = [
     "fake", "phish", "scam", "alert", "verify", "secure-login",

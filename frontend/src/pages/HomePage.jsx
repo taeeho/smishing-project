@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const INPUT_TABS = [
-  { key: 'image', label: '캡처 이미지', icon: '📷' },
-  { key: 'text', label: '문자 텍스트', icon: '💬' },
-  { key: 'url', label: '의심 URL', icon: '🔗' },
+  { key: 'image', label: '이미지', icon: '📷', desc: '캡처 이미지 업로드' },
+  { key: 'text', label: '텍스트', icon: '💬', desc: '의심 문자 붙여넣기' },
+  { key: 'url', label: 'URL', icon: '🔗', desc: '의심 링크 입력' },
+  { key: 'qr', label: 'QR', icon: '🔳', desc: 'QR 이미지 분석' },
 ]
 
 export default function HomePage() {
@@ -34,7 +35,11 @@ export default function HomePage() {
   }
 
   const canSubmit = !loading && (
-    activeTab === 'image' ? !!file : activeTab === 'url' ? url.trim() : text.trim()
+    activeTab === 'image' || activeTab === 'qr'
+      ? !!file
+      : activeTab === 'url'
+        ? url.trim()
+        : text.trim()
   )
 
   const onSubmit = async (e) => {
@@ -47,7 +52,7 @@ export default function HomePage() {
       const token = localStorage.getItem('access_token')
       const authHeader = token ? { Authorization: `Bearer ${token}` } : {}
 
-      if (activeTab === 'image' && file) {
+      if ((activeTab === 'image' || activeTab === 'qr') && file) {
         const formData = new FormData()
         formData.append('file', file)
         response = await axios.post('/api/analyze/image', formData, {
@@ -70,54 +75,75 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* 헤더 영역 */}
-      <div className="text-center pt-3">
-        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 text-2xl shadow-lg shadow-violet-200">
-          🔍
-        </div>
-        <h1 className="text-2xl font-extrabold text-slate-800">의심 문자 분석</h1>
-        <p className="mt-1 text-sm text-slate-500">아래 3가지 중 하나만 입력해도 분석할 수 있어요</p>
-      </div>
+    <div className="space-y-6">
+      <section className="rounded-[28px] border border-[#eadfd5] bg-[#f8f1ea] px-5 py-6 shadow-sm">
+        <p className="text-xs font-semibold text-violet-500">Q체크 스마트 분석</p>
+        <h1 className="mt-2 text-2xl font-extrabold leading-tight text-[#2c2c2c]">
+          의심 채팅을
+          <br />
+          안전하게 확인하세요
+        </h1>
+        <p className="mt-2 text-sm text-[#6b6b6b]">
+          채팅 내용을 그대로 가져오면 위험도를 알려드립니다.
+        </p>
 
-      {/* 입력 방식 탭 */}
-      <div className="rounded-2xl bg-white/90 p-1 shadow-sm ring-1 ring-violet-100">
-        <div className="grid grid-cols-3 gap-1">
-          {INPUT_TABS.map((tab) => {
-            const isActive = activeTab === tab.key
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={[
-                  'flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-xs font-semibold transition',
-                  isActive
-                    ? 'bg-white text-violet-700 shadow-sm'
-                    : 'text-slate-500 hover:text-violet-600',
-                ].join(' ')}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            )
-          })}
+        <div className="mt-6 flex justify-center">
+          <div className="relative w-[240px] rounded-[36px] border border-[#eadfd5] bg-[#f6efe8] p-4 shadow">
+            <div className="absolute left-1/2 top-2 h-2 w-16 -translate-x-1/2 rounded-full bg-[#e9e1d9]" />
+            <div className="mt-4 space-y-3 rounded-[24px] bg-white px-4 py-4 shadow-sm">
+              <div className="max-w-[170px] rounded-2xl bg-[#efe9ff] px-3 py-2 text-[11px] text-[#5f4fc6]">
+                [공지] 계정 보호를 위해 링크를 확인해주세요.
+              </div>
+              <div className="ml-auto max-w-[170px] rounded-2xl bg-[#f7f2ec] px-3 py-2 text-[11px] text-[#7a7067]">
+                확인 링크가 진짜인지 모르겠어요.
+              </div>
+              <div className="max-w-[170px] rounded-2xl bg-[#efe9ff] px-3 py-2 text-[11px] text-[#5f4fc6]">
+                아래 버튼으로 바로 검사해요.
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        {/* ── 1. 이미지 업로드 ──────────────────────────── */}
-        {activeTab === 'image' && (
-          <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-violet-100">
-            <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-slate-600">
-              📷 캡처 이미지
+      <form onSubmit={onSubmit} className="space-y-4">
+        <section className="rounded-2xl border border-[#eadfd5] bg-white p-3 shadow-sm">
+          <div className="grid grid-cols-2 gap-2">
+            {INPUT_TABS.map((tab) => {
+              const isActive = activeTab === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={[
+                    'rounded-2xl px-3 py-3 text-left transition',
+                    isActive
+                      ? 'bg-[#efe9ff] text-[#6b5ad3]'
+                      : 'bg-[#f9f4ef] text-[#6b6b6b] hover:bg-[#efe9ff]',
+                  ].join(' ')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{tab.icon}</span>
+                    <span className="text-sm font-semibold">{tab.label}</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-[#8c827a]">{tab.desc}</p>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        {(activeTab === 'image' || activeTab === 'qr') && (
+          <div className="rounded-2xl border border-[#eadfd5] bg-white p-5 shadow-sm">
+            <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-[#6b6b6b]">
+              {activeTab === 'qr' ? '🔳 QR 이미지' : '📷 캡처 이미지'}
             </label>
             {preview ? (
               <div className="relative">
                 <img
                   src={preview}
                   alt="미리보기"
-                  className="h-40 w-full rounded-xl bg-slate-50 object-contain"
+                  className="h-44 w-full rounded-xl bg-[#faf6f2] object-contain"
                 />
                 <button
                   type="button"
@@ -130,87 +156,66 @@ export default function HomePage() {
             ) : (
               <div
                 onClick={() => fileRef.current?.click()}
-                className="cursor-pointer rounded-xl border border-dashed border-violet-200 bg-violet-50/40 px-4 py-6 text-center transition hover:border-violet-300"
+                className="cursor-pointer rounded-xl border border-dashed border-[#e7dcd2] bg-[#faf6f2] px-4 py-8 text-center transition hover:border-[#d9cdc2]"
               >
                 <span className="mb-1 block text-2xl">📤</span>
-                <span className="text-sm text-slate-500">탭하여 이미지 업로드</span>
+                <span className="text-sm text-[#8a8077]">탭하여 이미지 업로드</span>
               </div>
             )}
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
           </div>
         )}
 
-        {/* ── 2. 문자 텍스트 ───────────────────────────── */}
         {activeTab === 'text' && (
-          <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-violet-100">
-            <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-slate-600">
+          <div className="rounded-2xl border border-[#eadfd5] bg-white p-5 shadow-sm">
+            <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-[#6b6b6b]">
               💬 문자 텍스트
             </label>
             <textarea
-              rows={4}
+              rows={5}
               placeholder="의심 문자 내용을 붙여넣으세요"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="w-full resize-none rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200"
+              className="w-full resize-none rounded-xl border border-[#e7dcd2] bg-white px-4 py-3 text-sm text-[#3b3b3b] placeholder:text-[#9a9088] focus:border-[#b9aaf0] focus:outline-none focus:ring-2 focus:ring-[#cfc4ff]"
             />
           </div>
         )}
 
-        {/* ── 3. URL 입력 ──────────────────────────────── */}
         {activeTab === 'url' && (
-          <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-violet-100">
-            <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-slate-600">
+          <div className="rounded-2xl border border-[#eadfd5] bg-white p-5 shadow-sm">
+            <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-[#6b6b6b]">
               🔗 의심 URL
             </label>
             <input
               placeholder="https://..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200"
+              className="w-full rounded-xl border border-[#e7dcd2] bg-white px-4 py-3 text-sm text-[#3b3b3b] placeholder:text-[#9a9088] focus:border-[#b9aaf0] focus:outline-none focus:ring-2 focus:ring-[#cfc4ff]"
             />
           </div>
         )}
 
-        {/* 에러 */}
         {error && (
           <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
             ⚠️ {error}
           </div>
         )}
 
-        {/* 분석 버튼 */}
         <button
           type="submit"
           disabled={!canSubmit}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#8b73e5] px-4 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-[#7a63db] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? (
             <span className="flex items-center gap-2">
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              AI 분석 중...
+              분석 중...
             </span>
           ) : (
-            '🔍 분석 시작'
+            '검사 시작하기'
           )}
         </button>
       </form>
-
-      {/* 안내 */}
-      <div className="grid grid-cols-3 gap-2 pt-1">
-        {[
-          { icon: '🤖', title: 'AI 분류' },
-          { icon: '📊', title: '근거 제시' },
-          { icon: '🛡️', title: '행동 가이드' },
-        ].map((c) => (
-          <div
-            key={c.title}
-            className="rounded-xl border border-violet-100 bg-white px-2 py-3 text-center"
-          >
-            <div className="mb-1 text-lg">{c.icon}</div>
-            <div className="text-xs font-semibold text-slate-500">{c.title}</div>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
