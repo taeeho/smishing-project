@@ -13,6 +13,7 @@ from app.db.models.text_training import TextTrainingData
 from app.db.models.url_training import UrlTrainingData
 
 
+
 @dataclass
 class PipelineInput:
     """파이프라인 입력"""

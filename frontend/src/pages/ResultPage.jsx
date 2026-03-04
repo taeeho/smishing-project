@@ -24,9 +24,7 @@ export default function ResultPage() {
     return (
       <div className="py-20 text-center">
         <p className="text-xl text-slate-500">분석 결과가 없어요.</p>
-        <button onClick={() => navigate('/')} className="mt-4 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white">
-          분석하러 가기
-        </button>
+        <button onClick={() => navigate('/')} className="mt-4 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white">분석하러 가기</button>
       </div>
     )
   }
@@ -54,14 +52,10 @@ export default function ResultPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <RiskBadge label={r.url_risk_label} />
           {r.smishing_type && r.smishing_type !== '판별불가' && (
-            <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold">
-              유형: {r.smishing_type}
-            </span>
+            <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold">유형: {r.smishing_type}</span>
           )}
           {r.group_risk && (
-            <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold">
-              📈 집단 위험 감지
-            </span>
+            <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold">📈 집단 위험 감지</span>
           )}
         </div>
       </div>
@@ -133,12 +127,7 @@ export default function ResultPage() {
             <pre className="whitespace-pre-wrap break-words rounded-xl bg-violet-950 p-4 text-xs leading-relaxed text-violet-100">
               {r.report_template}
             </pre>
-            <button
-              onClick={() => navigator.clipboard?.writeText(r.report_template)}
-              className="absolute right-3 top-3 rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-white/20"
-            >
-              📋 복사
-            </button>
+            <button onClick={() => navigator.clipboard?.writeText(r.report_template)} className="absolute right-3 top-3 rounded-lg bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-white/20">📋 복사</button>
           </div>
           {r.report_procedure && (
             <p className="mt-3 text-xs text-slate-500">
@@ -155,12 +144,7 @@ export default function ResultPage() {
             <span className="text-lg">🛡️</span> 보호자 공유 요약
           </h2>
           <p className="text-sm text-violet-700">{r.guardian_summary}</p>
-          <button
-            onClick={() => navigator.clipboard?.writeText(r.guardian_summary)}
-            className="mt-3 rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700"
-          >
-            📋 요약 복사하여 공유
-          </button>
+          <button onClick={() => navigator.clipboard?.writeText(r.guardian_summary)} className="mt-3 rounded-xl bg-violet-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-700">📋 요약 복사하여 공유</button>
         </section>
       )}
 
@@ -183,18 +167,8 @@ export default function ResultPage() {
 
       {/* 하단 버튼 */}
       <div className="flex flex-col gap-3 pt-2">
-        <button
-          onClick={() => navigate('/')}
-          className="rounded-2xl border-2 border-violet-200 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50"
-        >
-          🔍 새로운 분석
-        </button>
-        <button
-          onClick={() => navigate('/coaching', { state: { result: r } })}
-          className="rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl"
-        >
-          📋 이후 대처 코칭 보기
-        </button>
+        <button onClick={() => navigate('/')} className="rounded-2xl border-2 border-violet-200 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50">🔍 새로운 분석</button>
+        <button onClick={() => navigate('/coaching', { state: { result: r } })} className="rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl">📋 이후 대처 코칭 보기</button>
       </div>
     </div>
   )

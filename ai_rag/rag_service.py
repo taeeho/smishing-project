@@ -322,7 +322,7 @@ async def generate_guidance(
     guide = _GUIDE_DB.get(smishing_type, _DEFAULT_GUIDE)
 
     if url_risk_label == "안전":
-        risk_summary = "안전한 것으로 확인되었습니다. 현재 위험도는 안전 수준입니다."
+        risk_summary = "스미싱으로 의심되는 메시지가 아닙니다."
         evidence = [
             "화이트리스트 도메인 확인",
             "Safe Browsing 위험 신호 없음",

@@ -38,7 +38,7 @@ const DEFAULT_STEPS = [
     icon: '📞',
     title: '4단계: 기관 신고',
     desc: '필요한 경우 관련 기관에 신고하세요.',
-    checklist: [
+    checklist:[
       '경찰청 112 신고',
       '금융감독원 1332 피해구제 신청',
       'KISA 118 스팸 신고',
@@ -112,9 +112,9 @@ export default function CoachingPage() {
         </p>
       </div>
 
-      {/* 코칭 단계 */}
+      {/* 코칭 */}
       <div className="space-y-4">
-        {steps.map((step, si) => {
+        {steps.map((step, si) =>{
           const stepChecked = step.checklist.filter((_, ci) => checked[`${si}-${ci}`]).length
           const stepDone = stepChecked === step.checklist.length && step.checklist.length > 0
 
@@ -182,21 +182,11 @@ export default function CoachingPage() {
           ))}
         </div>
       </div>
-
-      {/* 하단 버튼 */}
+      
+{/* 하단버튼 */}
       <div className="flex flex-wrap justify-center gap-4 pt-4">
-        <button
-          onClick={() => navigate('/')}
-          className="rounded-2xl border-2 border-violet-200 px-8 py-3 font-semibold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50"
-        >
-          🔍 새로운 분석
-        </button>
-        <button
-          onClick={() => navigate('/guardian')}
-          className="rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:shadow-xl"
-        >
-          🛡️ 보호자 모드
-        </button>
+        <button onClick={() => navigate('/')} className="rounded-2xl border-2 border-violet-200 px-8 py-3 font-semibold text-slate-700 transition hover:border-violet-300 hover:bg-violet-50">🔍 새로운 분석</button>
+        <button onClick={() => navigate('/guardian')} className="rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-8 py-3 font-semibold text-white shadow-lg transition hover:shadow-xl">🛡️ 보호자 모드</button>
       </div>
     </div>
   )

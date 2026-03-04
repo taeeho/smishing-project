@@ -120,50 +120,26 @@ export default function ProfilePage() {
         <div className="space-y-4">
           <div>
             <label className="text-sm font-semibold text-slate-600">이메일</label>
-            <input
-              value={form.email}
-              disabled
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500"
-            />
+            <input value={form.email} disabled className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500" />
           </div>
           <div>
             <label className="text-sm font-semibold text-slate-600">이름</label>
-            <input
-              value={form.username}
-              onChange={(e) => onChange('username', e.target.value)}
-              className="mt-2 w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200"
-            />
+            <input value={form.username} onChange={(e) => onChange('username', e.target.value)} className="mt-2 w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200" />
           </div>
           <div>
             <label className="text-sm font-semibold text-slate-600">나이</label>
-            <input
-              type="number"
-              min="0"
-              value={form.age}
-              onChange={(e) => onChange('age', e.target.value)}
-              className="mt-2 w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200"
-            />
+            <input type="number" min="0" value={form.age} onChange={(e) => onChange('age', e.target.value)} className="mt-2 w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200" />
           </div>
           <div>
             <label className="text-sm font-semibold text-slate-600">보호자 연락처</label>
-            <input
-              value={form.guardian_contact}
-              onChange={(e) => onChange('guardian_contact', formatPhone(e.target.value))}
-              inputMode="numeric"
-              placeholder="010-0000-0000"
+            <input value={form.guardian_contact} inputMode="numeric" placeholder="010-0000-0000"
               className="mt-2 w-full rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200"
+              onChange={(e) => onChange('guardian_contact', formatPhone(e.target.value))}
             />
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="mt-5 w-full rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {saving ? '저장 중...' : '회원정보 저장'}
-        </button>
+        <button type="button" onClick={onSave} disabled={saving} className="mt-5 w-full rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60">{saving ? '저장 중...' : '회원정보 저장'}</button>
       </section>
     </div>
   )

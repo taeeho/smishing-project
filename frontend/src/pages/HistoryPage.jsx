@@ -101,30 +101,16 @@ export default function HistoryPage() {
       {!loading && !error && items.length > 0 && (
         <section className="space-y-3">
           {items.map((item) => (
-            <div
-              key={item.analysis_id}
-              className="rounded-2xl border border-violet-100 bg-white px-4 py-4 shadow-sm"
-            >
+            <div key={item.analysis_id} className="rounded-2xl border border-violet-100 bg-white px-4 py-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => openDetail(item.analysis_id)}
-                  className="text-left"
-                >
+                <button type="button" onClick={()=>openDetail(item.analysis_id)} className="text-left">
                   <p className="text-sm font-semibold text-slate-700">{item.title}</p>
                   <p className="text-xs text-slate-400">위험도 {Math.round(item.risk_score)}%</p>
                 </button>
                 <div className="flex items-center gap-2">
-                  <span className={`rounded-full border px-3 py-1 text-xs font-bold ${badgeClass(item.status)}`}>
-                    {item.status}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => deleteItem(item.analysis_id)}
-                    disabled={deletingId === item.analysis_id}
-                    className="rounded-lg border border-rose-200 px-2 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
-                  >
-                    {deletingId === item.analysis_id ? '삭제중' : '삭제'}
+                  <span className={`rounded-full border px-3 py-1 text-xs font-bold ${badgeClass(item.status)}`}>{item.status}</span>
+                  <button type="button" onClick={()=>deleteItem(item.analysis_id)} disabled={deletingId===item.analysis_id} className="rounded-lg border border-rose-200 px-2 py-1 text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50">
+                    {deletingId===item.analysis_id ? '삭제중' : '삭제'}
                   </button>
                 </div>
               </div>

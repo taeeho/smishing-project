@@ -46,9 +46,9 @@ def _assert_gemini_ready() -> None:
 
 def _build_prompt(text: str) -> str:
     return (
-        "너는 스미싱 유형 분류기다. 아래 텍스트를 가장 적절한 한 가지 유형으로 분류해라.\n"
+        "당신은 스미싱 유형 분류기입니다. 아래 텍스트를 가장 적절한 한 가지 유형으로 분류하세요.\n"
         "가능한 유형: 택배사칭, 기관사칭, 금융사기, 지인사칭, 피싱링크, 기타, 판별불가\n"
-        "반드시 JSON으로만 답하라.\n"
+        "반드시 JSON 형식으로만 답하세요.\n"
         "{\n"
         '  "label": string,\n'
         '  "confidence": number\n'
@@ -84,7 +84,6 @@ def _call_gemini(prompt: str) -> str:
 
 
 def classify_text(text: str, use_trained: bool = False) -> BERTResult:
-    """LLM으로 스미싱 유형을 분류합니다. 학습 모델이 있으면 우선 사용합니다."""
     if not text or not text.strip():
         return BERTResult(
             smishing_type="판별불가",

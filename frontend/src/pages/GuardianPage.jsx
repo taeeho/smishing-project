@@ -22,7 +22,7 @@ export default function GuardianPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    try {
+    try{
       const [casesRes, summaryRes, alertsRes] = await Promise.all([
         axios.get('/api/guardian/cases'),
         axios.get('/api/guardian/summary'),
@@ -31,7 +31,7 @@ export default function GuardianPage() {
       setCases(casesRes.data.cases || [])
       setSummary(summaryRes.data)
       setAlerts(alertsRes.data.alerts || [])
-    } catch (err) {
+    } catch(err){
       console.error('보호자 데이터 로드 실패', err)
     } finally {
       setLoading(false)
@@ -50,7 +50,7 @@ export default function GuardianPage() {
   }
 
   const saveMemo = async (caseId) => {
-    try {
+    try{
       await axios.post('/api/guardian/memo', { case_id: caseId, memo: editMemo[caseId] || '' })
       setEditMemo((prev) => ({ ...prev, [caseId]: undefined }))
       fetchData()
@@ -127,25 +127,15 @@ export default function GuardianPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-bold">{c.summary}</h3>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
-                        #{c.case_id}
-                      </span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">#{c.case_id}</span>
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">
-                      유형: {c.smishing_type} · {c.created_at}
-                    </p>
+                    <p className="mt-1 text-sm text-slate-500">유형: {c.smishing_type} · {c.created_at}</p>
                     <p className="mt-2 text-slate-600">{c.guardian_summary}</p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${STATUS_COLORS[c.status] || ''}`}>
-                      {c.status}
-                    </span>
-                    <select
-                      value={c.status}
-                      onChange={(e) => updateStatus(c.case_id, e.target.value)}
-                      className="rounded-lg border border-violet-200 px-2 py-1 text-sm focus:border-violet-400 focus:outline-none"
-                    >
+                    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${STATUS_COLORS[c.status] || ''}`}>{c.status}</span>
+                    <select value={c.status} onChange={(e) => updateStatus(c.case_id, e.target.value)} className="rounded-lg border border-violet-200 px-2 py-1 text-sm focus:border-violet-400 focus:outline-none">
                       <option value="미조치">미조치</option>
                       <option value="확인중">확인중</option>
                       <option value="완료">완료</option>
@@ -158,19 +148,13 @@ export default function GuardianPage() {
                   <label className="text-sm font-semibold text-slate-500">📝 메모</label>
                   <div className="mt-2 flex gap-2">
                     <input
-                      className="flex-1 rounded-xl border border-violet-200 px-4 py-2 text-sm focus:border-violet-400 focus:outline-none"
                       placeholder="메모를 입력하세요..."
                       value={editMemo[c.case_id] !== undefined ? editMemo[c.case_id] : c.memo}
+                      className="flex-1 rounded-xl border border-violet-200 px-4 py-2 text-sm focus:border-violet-400 focus:outline-none"
                       onChange={(e) =>
                         setEditMemo((prev) => ({ ...prev, [c.case_id]: e.target.value }))
-                      }
-                    />
-                    <button
-                      onClick={() => saveMemo(c.case_id)}
-                      className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700"
-                    >
-                      저장
-                    </button>
+                      }/>
+                    <button onClick={() => saveMemo(c.case_id)} className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700">저장</button>
                   </div>
                 </div>
               </div>

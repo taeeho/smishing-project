@@ -22,7 +22,7 @@ export default function HomePage() {
 
   const handleFile = (e) => {
     const f = e.target.files?.[0]
-    if (!f) return
+    if(!f) return
     setFile(f)
     const reader = new FileReader()
     reader.onload = (ev) => setPreview(ev.target.result)
@@ -78,28 +78,16 @@ export default function HomePage() {
     <div className="space-y-6">
       <section className="rounded-[28px] border border-[#eadfd5] bg-[#f8f1ea] px-5 py-6 shadow-sm">
         <p className="text-xs font-semibold text-violet-500">Q체크 스마트 분석</p>
-        <h1 className="mt-2 text-2xl font-extrabold leading-tight text-[#2c2c2c]">
-          의심 채팅을
-          <br />
-          안전하게 확인하세요
-        </h1>
-        <p className="mt-2 text-sm text-[#6b6b6b]">
-          채팅 내용을 그대로 가져오면 위험도를 알려드립니다.
-        </p>
+        <h1 className="mt-2 text-2xl font-extrabold leading-tight text-[#2c2c2c]">의심 채팅을<br/>안전하게 확인하세요</h1>
+        <p className="mt-2 text-sm text-[#6b6b6b]">채팅 내용을 그대로 가져오면 위험도를 알려드립니다.</p>
 
         <div className="mt-6 flex justify-center">
           <div className="relative w-[240px] rounded-[36px] border border-[#eadfd5] bg-[#f6efe8] p-4 shadow">
             <div className="absolute left-1/2 top-2 h-2 w-16 -translate-x-1/2 rounded-full bg-[#e9e1d9]" />
             <div className="mt-4 space-y-3 rounded-[24px] bg-white px-4 py-4 shadow-sm">
-              <div className="max-w-[170px] rounded-2xl bg-[#efe9ff] px-3 py-2 text-[11px] text-[#5f4fc6]">
-                [공지] 계정 보호를 위해 링크를 확인해주세요.
-              </div>
-              <div className="ml-auto max-w-[170px] rounded-2xl bg-[#f7f2ec] px-3 py-2 text-[11px] text-[#7a7067]">
-                확인 링크가 진짜인지 모르겠어요.
-              </div>
-              <div className="max-w-[170px] rounded-2xl bg-[#efe9ff] px-3 py-2 text-[11px] text-[#5f4fc6]">
-                아래 버튼으로 바로 검사해요.
-              </div>
+              <div className="max-w-[170px] rounded-2xl bg-[#efe9ff] px-3 py-2 text-[11px] text-[#5f4fc6]">[공지] 계정 보호를 위해 링크를 확인해주세요.</div>
+              <div className="ml-auto max-w-[170px] rounded-2xl bg-[#f7f2ec] px-3 py-2 text-[11px] text-[#7a7067]">확인 링크가 진짜인지 모르겠어요.</div>
+              <div className="max-w-[170px] rounded-2xl bg-[#efe9ff] px-3 py-2 text-[11px] text-[#5f4fc6]">아래 버튼으로 바로 검사해요.</div>
             </div>
           </div>
         </div>
@@ -183,34 +171,19 @@ export default function HomePage() {
 
         {activeTab === 'url' && (
           <div className="rounded-2xl border border-[#eadfd5] bg-white p-5 shadow-sm">
-            <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-[#6b6b6b]">
-              🔗 의심 URL
-            </label>
-            <input
-              placeholder="https://..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="w-full rounded-xl border border-[#e7dcd2] bg-white px-4 py-3 text-sm text-[#3b3b3b] placeholder:text-[#9a9088] focus:border-[#b9aaf0] focus:outline-none focus:ring-2 focus:ring-[#cfc4ff]"
-            />
+            <label className="mb-2 flex items-center gap-1 text-sm font-semibold text-[#6b6b6b]">🔗 의심 URL</label>
+            <input placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} className="w-full rounded-xl border border-[#e7dcd2] bg-white px-4 py-3 text-sm text-[#3b3b3b] placeholder:text-[#9a9088] focus:border-[#b9aaf0] focus:outline-none focus:ring-2 focus:ring-[#cfc4ff]" />
           </div>
         )}
 
         {error && (
-          <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
-            ⚠️ {error}
-          </div>
+          <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">⚠️ {error}</div>
         )}
 
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#8b73e5] px-4 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-[#7a63db] disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <button type="submit" disabled={!canSubmit} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#8b73e5] px-4 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-[#7a63db] disabled:cursor-not-allowed disabled:opacity-50">
           {loading ? (
             <span className="flex items-center gap-2">
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              분석 중...
-            </span>
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />분석 중...</span>
           ) : (
             '검사 시작하기'
           )}

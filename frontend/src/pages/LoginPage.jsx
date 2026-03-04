@@ -23,7 +23,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[360px] rounded-[32px] border border-violet-100 bg-[#faf6f1] p-6 shadow-sm">
         <div className="flex flex-col items-center gap-4">
           <div className="mt-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white shadow-sm">
-            <span className="text-4xl font-black text-violet-500">Q</span>
+            <img src="/Qcheck.png" alt="Qcheck" className="h-10 w-10 object-contain" />
           </div>
           <div className="text-center">
             <h1 className="text-xl font-bold text-slate-800">로그인 방식</h1>

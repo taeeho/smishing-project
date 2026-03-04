@@ -15,12 +15,12 @@ export default function KakaoCallback() {
       const params = new URLSearchParams(window.location.search)
       const code = params.get('code')
 
-      if (!code) {
+      if(!code){
         setStatus('인증 코드가 없습니다. 다시 시도해주세요.')
         return
       }
 
-      try {
+      try{
         const res = await axios.get(`/api/auth/kakao/callback?code=${code}`)
         const { user, tokens } = res.data
         localStorage.setItem('auth_user', JSON.stringify(user))
@@ -36,7 +36,7 @@ export default function KakaoCallback() {
     }
 
     run()
-  }, [navigate])
+  },[navigate])
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
